@@ -380,7 +380,7 @@ int main()
             break;
         }
     }
-    delete [] page;
+    delete [] page;     //释放内存
     delete [] memory;
     system("pause");
     return 0;

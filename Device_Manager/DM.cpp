@@ -8,12 +8,11 @@ using namespace std;
 /* 进程控制块 */
 struct PCB
 {
-    string process;  /* 进程ID */
+    string processid;  /* 进程ID */
     string device_name;  /* 申请设备名称 */
     string coid;    /* 进程所用控制器名称 */
     string chid;    /* 进程所用通道名称 */
 };
-
 
 /* 设备控制表 */
 struct DCT
@@ -48,10 +47,12 @@ struct CHCT
     vector <string> COid;   /* 与通道相连的控制器的id */
 };
 
-queue <DCT> block;  /* 阻塞队列 */
-vector <SDT> sdt;
-vector <COCT> coct;
-vector <CHCT> chct(2);
+queue <PCB> ch_block;  /* 通道阻塞队列 */
+queue <PCB> co_block;  /* 控制器阻塞队列 */
+vector <PCB> run_p;    /* 申请成功的队列 */
+vector <SDT> sdt;   /* 系统设备表队列 */
+vector <COCT> coct;  /* 控制器表队列 */
+vector <CHCT> chct(2);  /* 通道控制表队列 */
 
 void init();    /* 初始化 */
 void Add();  /* 添加设备 */
@@ -187,13 +188,18 @@ void Add(){
 /* 分配设备 */
 void Distribute(){
     string D_name;
+    PCB process;
+    cout<<"请输入申请进程的ID:";
+    cin>>process.processid;
     cout<<"请输入请求分配设备的ID:";
     cin>>D_name;
     for(int i=0; i<sdt.size(); i++){
         if (sdt[i].Dname.compare(D_name) == 0)  /* 申请设备存在 */
         {
+            process.device_name = D_name;
             if(sdt[i].DCT.state == 1){  /* 设备被占用 */
                 cout<<"设备被占用,申请失败!"<<endl;
+                process.device_name = "";
                 return;
             }
             else if(sdt[i].DCT.state == 0){  /* 设备空闲 */
@@ -201,30 +207,73 @@ void Distribute(){
                 for(int k=0; k<coct.size(); k++){  /* 查找控制该设备的控制器 */
                     if(sdt[i].DCT.coid.compare(coct[k].controllerid) == 0){
                         if(coct[k].state == 0){  /* 控制器空闲 */
+                            process.coid = coct[k].controllerid;    /* 将空闲的控制器交给申请进程使用 */
                             coct[k].state = 1;
-                            if(chct[0].state == 0){  /* 通道1空闲 */
+                            if(coct[k].Chid.compare("ch1") && chct[0].state == 0){  /* 表明控制器与通道1相连且通道1空闲 */
+                                process.chid = "ch1";   /* 该进程占用通道1 */
                                 chct[0].state = 1;  /* 将通道1状态置1(忙碌) */
                                 cout<<"分配设备成功"<<endl;
                                 return;
                             }
-                            else if (chct[1].state == 0){   /* 通道2空闲 */
+                            else if (coct[k].Chid.compare("ch2") && chct[1].state == 0){   /* 表明控制器与通道2相连且通道2空闲 */
+                                process.chid = "ch2";   /* 该进程占用通道2 */
                                 chct[1].state = 1;   /* 将通道2状态置1(忙碌) */
+                                run_p.push_back(process);
                                 cout<<"分配设备成功"<<endl;
                                 return;
                             }
                             else{   /* 通道忙碌 */
+                                ch_block.push(process);  /* 将该进程加入通道阻塞队列 */
                                 cout<<"通道阻塞，已将请求加入通道阻塞队列"<<endl;
                                 return;
                             }
                         }
+                        else{
+                            co_block.push(process);
+                            cout<<"控制器阻塞，已将请求加入控制器阻塞队列"<<endl;
+                            return;
+                        }
                     }
                 }
-                cout<<"控制器阻塞，已将控制器加入控制器阻塞队列"<<endl;
+            }
+        }
+    }
+    cout<<"申请设备不存在,请添加设备!!!"<<endl;
+    return;
+}
+
+/* 回收设备 */
+void Recycle(){
+    string Deviceid;  /* 待回收设备id */
+    string controlid;   /* 待回收设备所用控制器id */
+    string channelid;   /* 带回收设备所用通道id */
+    cout<<"请输入回收设备id：";
+    cin>>Deviceid;
+    for(int i=0; i<sdt.size(); i++){
+        if(sdt[i].Dname.compare(Deviceid) == 0){    /* 寻找待回收设备 */
+            if(sdt[i].DCT.state == 1){  /* 如果待回收设备正在使用中 */
+                sdt[i].DCT.state = 0;   /* 设备状态置为空闲 */
+                for(int k=0; k<run_p.size(); k++){
+                    if(run_p[k].device_name.compare(Deviceid) == 0){    /* 查找使用该设备的进程 */
+                        controlid = run_p[k].coid;   /* 记录进程占用的控制器 */
+                        channelid = run_p[k].chid;   /* 记录进程占用通道 */
+                        run_p.erase(run_p.begin()+k);   /* 释放该进程 */
+                    }
+                }
+                for(int j=0; j<coct.size(); j++)   /* 查找设备占用的控制器 */
+                    if(coct[j].controllerid.compare(controlid) == 0)
+                        coct[j].state = 0;  /* 找到后将控制器状态置为空闲 */
+                for(int channel=0; channel<chct.size(); channel++)  /* 查找设备占用通道 */
+                    if(chct[channel].channelid.compare(channelid) == 0)
+                        chct[channel].state = 0;    /* 找到后将通道状态置为空闲 */
+                cout<<"设备成功回收"<<endl;
+                return;
+            }
+            else{
+                cout<<"设备未被占用，无需回收"<<endl;
                 return;
             }
         }
     }
-}
-
-int main(){
+    cout<<"该设备不存在，请检查设备名称是否正确"<<endl;
 }

@@ -356,15 +356,20 @@ void Delete(){
 
 /* 显示设备详情 */
 void show(){
-    cout<<"------------------------------------------------------"<<endl;
-    cout<<"|   device   |   type   |   state   |   controller   |"<<endl;
-    cout<<"------------------------------------------------------"<<endl;
+    cout<<"--------------------------------------------------------------------"<<endl;
+    cout<<"|   device   |   type   |   state   |   controller   |   channel   |"<<endl;
+    cout<<"--------------------------------------------------------------------"<<endl;
     for (int i=0; i<sdt.size(); i++){
         cout<<setiosflags(ios::left)<<setw(14)<<sdt[i].Dname;
         cout<<setw(12)<<sdt[i].type;
         cout<<setw(13)<<sdt[i].DCT.state;
-        cout<<setiosflags(ios::left)<<setw(18)<<sdt[i].DCT.coid<<endl;
+        cout<<setiosflags(ios::left)<<setw(18)<<sdt[i].DCT.coid;
+        for(int k=0; k<coct.size(); k++){
+            if(coct[k].controllerid.compare(sdt[i].DCT.coid) == 0)
+                cout<<setw(15)<<coct[k].Chid<<endl;
+        }
     }
+    cout<<"--------------------------------------------------------------------"<<endl;
     cout<<endl;
 }
 

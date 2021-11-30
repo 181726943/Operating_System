@@ -41,8 +41,6 @@ struct COCT
     string controllerid;    /* 控制器id */
     int state;    /* 控制器状态1/0 */
     string Chid;    /* 与控制器相连的通道的id */
-    // COCT(): controllerid(controllerid) , state(state) , Chid(Chid){}
-    // COCT(string controllerid,int state,string Chid) : controllerid(controllerid) , state(state) , Chid(Chid) {}
 };
 
 /* 通道控制表 */
@@ -96,10 +94,7 @@ void init(){
     sdt[3].DCT.state = 0;
     sdt[3].DCT.coid = "co4";
     
-
     /* 初始化控制器控制表 */
-    // coct[0]("col",0,"ch1");
-    // strcpy((char*)&coct[0].controllerid,"col");
     coct[0].controllerid = string("co1");
     coct[0].state = 0;
     coct[0].Chid = string("ch1");
@@ -174,7 +169,7 @@ void Add(){
             for(int k=0; k<coct.size(); k++){
                 if(newco.controllerid == coct[k].controllerid){
                     k = 0;
-                    std::cout<<"控制器已存在,请重新添加"<<endl<<endl;
+                    std::cout<<"控制器已存在,请重新添加"<<endl;
                     std::cin>>newco.controllerid;
                 }
             }
@@ -212,7 +207,7 @@ void Distribute(){
         {
             process.device_name = D_name;
             if(sdt[i].DCT.state == 1){  /* 设备被占用 */
-                std::cout<<"设备被占用,申请失败!"<<endl;
+                std::cout<<"设备被占用,申请失败!"<<endl<<endl;
                 process.device_name = "";
                 return;
             }
@@ -227,25 +222,25 @@ void Distribute(){
                                 process.chid = "ch1";   /* 该进程占用通道1 */
                                 chct[0].state = 1;  /* 将通道1状态置1(忙碌) */
                                 run_p.push_back(process);
-                                std::cout<<"分配设备成功"<<endl;
+                                std::cout<<"分配设备成功"<<endl<<endl;
                                 return;
                             }
                             else if (coct[k].Chid == "ch2" && chct[1].state == 0){   /* 表明控制器与通道2相连且通道2空闲 */
                                 process.chid = "ch2";   /* 该进程占用通道2 */
                                 chct[1].state = 1;   /* 将通道2状态置1(忙碌) */
                                 run_p.push_back(process);
-                                std::cout<<"分配设备成功"<<endl;
+                                std::cout<<"分配设备成功"<<endl<<endl;
                                 return;
                             }
                             else{   /* 通道忙碌 */
                                 ch_block.push(process);  /* 将该进程加入通道阻塞队列 */
-                                std::cout<<"通道阻塞，已将请求加入通道阻塞队列"<<endl;
+                                std::cout<<"通道阻塞，已将请求加入通道阻塞队列"<<endl<<endl;
                                 return;
                             }
                         }
                         else{
                             co_block.push(process);
-                            std::cout<<"控制器阻塞，已将请求加入控制器阻塞队列"<<endl;
+                            std::cout<<"控制器阻塞，已将请求加入控制器阻塞队列"<<endl<<endl;
                             return;
                         }
                     }
@@ -253,7 +248,7 @@ void Distribute(){
             }
         }
     }
-    std::cout<<"申请设备不存在,请添加设备!!!"<<endl;
+    std::cout<<"申请设备不存在,请添加设备!!!"<<endl<<endl;
     return;
 }
 
